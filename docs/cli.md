@@ -835,7 +835,7 @@ remains unchanged.
 | `http_attempts` | Calls started through the source REST HTTP client. |
 | `http_responses` | Completed attempts that received an HTTP response. |
 | `requests` | Completed attempts grouped by actual `anonymous` or `authenticated` access, endpoint category, status, and outcome. Status `0` means no valid HTTP status was received. Outcomes distinguish `response`, `transport_error`, `canceled`, `read_error`, and `decode_error`. |
-| `cache_hits` | Reused results from `mutable_ref_disk`, `snapshot_resolved`, `snapshot_missing`, or `public_repository_check`. |
+| `cache_hits` | Reused results from `mutable_ref_disk`, `snapshot_resolved`, `snapshot_missing`, `public_repository_check`, or `compilation_missing_ref`. |
 | `suppressed` | Lookups prevented by a rate-limit cooldown, grouped by authentication and endpoint. These did not start an HTTP attempt. |
 
 The summary covers action and reusable-workflow source REST lookups. Archive

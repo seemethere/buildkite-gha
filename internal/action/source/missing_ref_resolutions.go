@@ -69,6 +69,9 @@ func (r *Resolver) resolveMutable(ctx context.Context, ref Reference) (Resolved,
 				if call.err == nil {
 					resolved.Reference = ref
 				}
+				if errors.As(call.err, new(*missingRefError)) {
+					recordSourceCacheHit(ctx, cacheCompilationMissingRef)
+				}
 				return resolved, call.err
 			}
 		}

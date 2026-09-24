@@ -93,7 +93,24 @@ jobs:
     steps:
       - uses: public/action@%s
 `, strings.Join(shards, ", "), commit)
-			ctx := source.WithMissingRefResolutions(source.WithPublicRepositoryChecks(t.Context()))
+			ctx, stats := source.WithGitHubAPIStats(t.Context())
+			ctx = source.WithMissingRefResolutions(source.WithPublicRepositoryChecks(ctx))
+			checkStats := func() {
+				t.Helper()
+				summary := stats.Snapshot()
+				if observed := uint64(requests.Load()); summary.HTTPAttempts != observed || summary.HTTPResponses != observed {
+					t.Errorf("reported HTTP attempts/responses = %d/%d, observed %d requests", summary.HTTPAttempts, summary.HTTPResponses, observed)
+				}
+				var missingHits uint64
+				for _, hit := range summary.CacheHits {
+					if hit.Cache == "compilation_missing_ref" {
+						missingHits += hit.Count
+					}
+				}
+				if missingHits != rows-1 || len(summary.Suppressed) != 0 {
+					t.Errorf("reported missing-ref cache hits = %d, suppressions = %v; want %d hits and no suppressions", missingHits, summary.Suppressed, rows-1)
+				}
+			}
 			bundle, err := compileActionRequestBudgetWorkflow(t, ctx, workflow, actions)
 			var missing *source.NotPublicError
 			if !errors.As(err, &missing) {
@@ -121,6 +138,7 @@ jobs:
 			if got := requests.Load(); got != wantRequests {
 				t.Errorf("GitHub API requests = %d, want %d for one complete resolution", got, wantRequests)
 			}
+			checkStats()
 
 			available.Store(true)
 			before := requests.Load()
@@ -134,6 +152,7 @@ jobs:
 			if got := requests.Load() - before; got != wantRequests-2 {
 				t.Errorf("next compilation requests = %d, want %d for the now-existing tag", got, wantRequests-2)
 			}
+			checkStats()
 		})
 	}
 }
